@@ -1,29 +1,18 @@
+import threading
 import os
-from telegram import Update
-from telegram.ext import Application, CommandHandler, ContextTypes
+from http.server import HTTPServer, BaseHTTPRequestHandler
 
-# Bot start command
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    user_first_name = update.effective_user.first_name
-    welcome_text = (
-        f"ሰላም {user_first_name}! 👋\n\n"
-        "ወደ ምግብ ማዘዣ ቦታችን እንኳን በደህና መጡ! 🍔🍕\n"
-        "ምን ማዘዝ ይፈልጋሉ?"
-    )
-    await update.message.reply_text(welcome_text)
+# Render Port Scan እንዳይዘጋው Dummy Server ማካሄጃ
+class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Bot is active!")
 
-def main():
-    # Get bot token from environment variables
-    token = os.environ.get("BOT_TOKEN")
-    if not token:
-        print("Error: BOT_TOKEN not found!")
-        return
+def run_dummy_server():
+    port = int(os.environ.get("PORT", 8080))
+    server = HTTPServer(('0.0.0.0', port), SimpleHTTPRequestHandler)
+    server.serve_forever()
 
-    app = Application.builder().token(token).build()
-    app.add_handler(CommandHandler("start", start))
-    
-    print("Bot is running...")
-    app.run_polling()
-
-if __name__ == "__main__":
-    main()
+# ድረ-ገጹን በጀርባ (Background Thread) ማስነሳት
+threading.Thread(target=run_dummy_server, daemon=True).start()
